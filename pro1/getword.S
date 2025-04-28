@@ -34,11 +34,6 @@ end:
 .globl getword
     .type getword, @function
 getword:
-    pushq %rbx                   # Save caller-saved registers
-    pushq %rcx
-    pushq %rdx
-    pushq %rsi
-
     leaq word_buffer(%rip), %rdx        # char* word
     movq p_txt(%rip), %rsi              # static char* p
     leaq txt_buffer(%rip), %rcx         # %rdx = $(filebuf + size)
@@ -89,18 +84,10 @@ L5:
 L6:
     movb $0, (%rdx)            # add '\0'
     movq %rsi, p_txt(%rip)     # renew p_txt 
-    popq %rsi                  # Restore caller-saved registers
-    popq %rdx
-    popq %rcx
-    popq %rbx
     ret
 
 L3:
     movq $0, %rax
-    popq %rsi                  # Restore caller-saved registers
-    popq %rdx
-    popq %rcx
-    popq %rbx
     ret
 
 L4:
@@ -111,8 +98,6 @@ L4:
 .globl isalpha
     .type isalpha, @function
 isalpha:
-    pushq %rbx                # Save caller-saved registers
-
     cmpb $'a', %al           # Check if character >= 'a'
     jl not_alpha
     cmpb $'z', %al           # Check if character <= 'z'
@@ -124,27 +109,21 @@ isalpha:
 
 is_alpha:
     movq $1, %rax            # Return 1 (true)
-    popq %rbx                # Restore caller-saved registers
     ret
 
 not_alpha:
     movq $-1, %rax           # Return -1 (false)
-    popq %rbx                # Restore caller-saved registers
     ret
 
 # Input: %rsi = array, %rdx = length
 .globl as_puts
     .type as_puts, @function
 as_puts:
-    pushq %rdi                # Save caller-saved registers
-    pushq %rax
 
     movq $1, %rax              # syscall: write
     movq $1, %rdi              
     syscall
 
-    popq %rax                 # Restore caller-saved registers
-    popq %rdi
     ret
 
 .globl as_exit
