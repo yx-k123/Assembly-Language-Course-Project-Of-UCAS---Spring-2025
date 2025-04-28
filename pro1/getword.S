@@ -12,10 +12,12 @@
     size: .quad 16
     word_lim: .quad 20
     p_txt: .quad 0
+    q_txt: .quad 0
     # txt_buffer: .asciz "    Hello world!\0"
     enter: .asciz "\n\0"
 .section .bss
     word_buffer: .space 20
+    output_buffer:  .space 1024          # 输出缓冲区，1024字节
 .section .text
     .globl _start
 _start:
@@ -25,6 +27,8 @@ _start:
     # initial p_txt 
     leaq txt_buffer(%rip), %rax
     movq %rax, p_txt(%rip)
+    leaq output_buffer(%rip), %rax
+    movq %rax, q_txt(%rip)
 
 loop:
     # call getword
@@ -32,15 +36,20 @@ loop:
     cmpq $0, %rax
     je end
 
+    call write
     # as_put
-    leaq word_buffer(%rip), %rsi  # address
-    movq %rdx, %rdx               # length
-    call as_puts
-    call print_enter
+    # leaq word_buffer(%rip), %rsi  # address
+    # movq %rdx, %rdx               # length
+    # call as_puts
+    # call print_enter
     
     jmp loop
 
 end:
+    leaq output_buffer(%rip), %rsi  # address
+    movq $50, %rdx               # length
+    call as_puts
+
     call as_exit
 
 # Use: %rax, %rbx
@@ -55,26 +64,28 @@ getword:
 
 L1:
     cmpq %rcx, %rsi
-    jge L2
+    jge L7
+
+L7:
     cmpb $32, (%rsi)          # ' '
     jne L2
     incq %rsi
     jmp L1
 
-L2:
+L2: 
     cmpq %rsi, %rcx
     je L3
     cmpb $0, (%rsi)           # '\0'
     je L3
 
     movb (%rsi), %al
-    movb %al, (%rdx)
-    incq %rdx
-
-    movb (%rsi), %al
     call isalpha
     cmpq $-1, %rax            # compare %rax -1
     je L4
+
+    movb (%rsi), %al
+    movb %al, (%rdx)
+    incq %rdx
 
     movq word_lim(%rip), %rbx
 L5:
@@ -96,6 +107,7 @@ L5:
     jmp L5
 
 L6:
+    incq %rsi
     movb $0, (%rdx)            # add '\0'
     movq %rsi, p_txt(%rip)     # renew p_txt 
     ret
@@ -112,14 +124,15 @@ L4:
 .globl isalpha
     .type isalpha, @function
 isalpha:
-    cmpb $'a', %al           # Check if character >= 'a'
-    jl not_alpha
     cmpb $'z', %al           # Check if character <= 'z'
-    jle is_alpha
+    jg not_alpha
     cmpb $'A', %al           # Check if character >= 'A'
     jl not_alpha
+
     cmpb $'Z', %al           # Check if character <= 'Z'
-    jg not_alpha
+    jle is_alpha
+    cmpb $'a', %al           # Check if character >= 'a'
+    jge is_alpha
 
 is_alpha:
     movq $1, %rax            # Return 1 (true)
@@ -228,3 +241,25 @@ read_error:
     mov $60, %rax
     mov $1, %rdi                # 退出状态码1
     syscall
+
+.globl write
+    .type write, @function
+write:
+    leaq word_buffer(%rip), %rdi   # 源地址
+    movq q_txt(%rip), %rsi         # 目标地址(假设q_txt存储当前写入位置)
+    
+write_loop:
+    movb (%rdi), %al               # 读取源字节
+    testb %al, %al                 # 检查是否为null字符
+    jz write_end
+    
+    movb %al, (%rsi)               # 写入目标
+    incq %rdi
+    incq %rsi
+    jmp write_loop
+    
+write_end:
+    movb $0, (%rsi)               # 确保null终止
+    incq %rsi
+    movq %rsi, q_txt(%rip)         # 更新写入位置(指向null后)
+    ret
