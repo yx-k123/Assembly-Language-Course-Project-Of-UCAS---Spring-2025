@@ -15,12 +15,17 @@
     q_txt: .quad 0
     # txt_buffer: .asciz "    Hello world!\0"
     enter: .asciz "\n\0"
+
 .section .bss
+    .global output_buffer
     word_buffer: .space 20
     output_buffer:  .space 1024          # 输出缓冲区，1024字节
+
 .section .text
-    .globl _start
-_start:
+
+    .globl read_to_buffer
+    .type read_to_buffer, @function
+read_to_buffer:
     # open_file
     call open_file
 
@@ -44,13 +49,15 @@ loop:
     # call print_enter
     
     jmp loop
+    
+    ret
 
 end:
-    leaq output_buffer(%rip), %rsi  # address
-    movq $50, %rdx               # length
-    call as_puts
-
-    call as_exit
+#     leaq output_buffer(%rip), %rsi  # address
+#     movq $50, %rdx               # length
+#     call as_puts
+#     call as_exit
+    
 
 # Use: %rax, %rbx
 # Output: %al
