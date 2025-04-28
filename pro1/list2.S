@@ -18,7 +18,7 @@ length_suffix:
     .lcomm num_buffer, 21  # 20 digits + null terminator
 
 .section .text
-.globl link_initial,add_node,head,tail,_start,print_node
+.globl link_initial,add_node,head,tail,_start,print_node,print_with_length
 
 # _start:
 #     #示例：初始化并添加两个单词
@@ -114,6 +114,31 @@ compare_strings:
     ret
 .not_equal:
     movb $0, %al
+    ret
+
+.globl find_max
+    .type find_max, @function
+find_max:
+    movq $0, %rax
+    movq head(%rip), %rbx
+    movq head(%rip), %rcx
+    movq 16(%rbx), %rbx   # 跳过哑节点
+    test %rbx, %rbx
+    jz max_end
+
+max_loop:
+    cmpq 8(%rbx), %rax   # 比较 %rax 和 8(%rbx)
+    jge .skip_update     # 如果 %rax >= 8(%rbx)，跳过更新
+    movq 8(%rbx), %rax   # 否则，将 8(%rbx) 的值赋给 %rax
+    movq (%rbx), %rcx
+
+    .skip_update:
+    movq 16(%rbx), %rbx
+    test %rbx, %rbx
+    jz max_end
+    jmp max_loop
+
+max_end:
     ret
 
 # 以下保持您原有代码不变（含注释）
