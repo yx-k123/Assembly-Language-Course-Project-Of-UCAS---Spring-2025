@@ -1,14 +1,27 @@
 .section .data
+    filename:   .asciz "input.txt"      # 文件名，以0结尾
+    txt_buffer:     .space 1024             # 数据缓冲区，1024字节
+    bufsize =   . - txt_buffer              # 缓冲区大小
+    
+    # 错误信息
+    error_open: .asciz "Failed to open file\n"
+    error_open_len = . - error_open
+    error_read: .asciz "Failed to read file\n"
+    error_read_len = . - error_read
+
     size: .quad 16
     word_lim: .quad 20
     p_txt: .quad 0
-    txt_buffer: .asciz "    Hello world!\0"
+    # txt_buffer: .asciz "    Hello world!\0"
     enter: .asciz "\n\0"
 .section .bss
     word_buffer: .space 20
 .section .text
     .globl _start
 _start:
+    # open_file
+    call open_file
+
     # initial p_txt 
     leaq txt_buffer(%rip), %rax
     movq %rax, p_txt(%rip)
@@ -23,7 +36,8 @@ loop:
     leaq word_buffer(%rip), %rsi  # address
     movq %rdx, %rdx               # length
     call as_puts
-
+    call print_enter
+    
     jmp loop
 
 end:
@@ -133,3 +147,84 @@ as_exit:
     xor %rdi, %rdi
     syscall
     ret
+
+.globl print_enter
+    .type print_enter, @function    
+print_enter:
+    movq $1, %rax                # sys_write系统调用号
+    movq $1, %rdi                # 标准输出
+    leaq enter(%rip), %rsi       # 换行符地址
+    movq $2, %rdx                # 换行符长度
+    syscall
+    ret
+
+.globl open_file
+    .type open_file, @function
+open_file:
+    # 打开文件
+    mov $2, %rax                # sys_open系统调用号
+    mov $filename, %rdi         # 文件名指针
+    mov $0, %rsi                # 标志位 (O_RDONLY)
+    mov $0, %rdx                # 模式 (不需要)
+    syscall
+    
+    # 检查是否成功打开
+    cmp $0, %rax
+    jl open_error               # 如果返回值为负，表示错误
+    
+    mov %rax, %r8               # 保存文件描述符到%r8
+    
+    # 读取文件
+    mov $0, %rax                # sys_read系统调用号
+    mov %r8, %rdi               # 文件描述符
+    mov $txt_buffer, %rsi           # 缓冲区地址
+    mov $bufsize, %rdx          # 缓冲区大小
+    syscall
+    
+    # 检查是否成功读取
+    cmp $0, %rax
+    jl read_error               # 如果返回值为负，表示错误
+    
+    # 此时%rax包含实际读取的字节数
+    # 可以在这里处理读取的数据
+    
+    # 关闭文件
+    mov $3, %rax                # sys_close系统调用号
+    mov %r8, %rdi               # 文件描述符
+    syscall
+    ret
+
+.globl open_error
+    .type open_error, @function
+open_error:
+    # 打印错误信息
+    mov $1, %rax                # sys_write系统调用号
+    mov $1, %rdi                # 标准输出
+    mov $error_open, %rsi       # 错误信息指针
+    mov $error_open_len, %rdx   # 错误信息长度
+    syscall
+    
+    # 退出程序
+    mov $60, %rax
+    mov $1, %rdi                # 退出状态码1
+    syscall
+
+.globl read_error
+    .type read_error, @function
+read_error:
+    # 打印错误信息
+    mov $1, %rax                # sys_write系统调用号
+    mov $1, %rdi                # 标准输出
+    mov $error_read, %rsi       # 错误信息指针
+    mov $error_read_len, %rdx   # 错误信息长度
+    syscall
+    
+    # 关闭文件
+    mov $3, %rax
+    mov %r8, %rdi
+    syscall
+    
+    # 退出程序
+    mov $60, %rax
+    mov $1, %rdi                # 退出状态码1
+    syscall
