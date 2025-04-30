@@ -20,23 +20,6 @@ length_suffix:
 .section .text
 .globl link_initial,add_node,head,tail,_start,print_node,print_with_length
 
-# _start:
-#     #示例：初始化并添加两个单词
-#     call link_initial
-#     mov $str1, %rdi
-#     call add_node
-#     mov $str2, %rdi
-#     call add_node
-#     mov $str3, %rdi
-#     call add_node
-#     # 遍历链表
-#     call print_node
-
-# exit:
-#     mov $60, %rax
-#     xor %rdi, %rdi
-#     syscall
-
 link_initial:
     # 无需传参
     # 创建一个空节点，头尾指针指向它
@@ -141,7 +124,6 @@ max_loop:
 max_end:
     ret
 
-# 以下保持您原有代码不变（含注释）
 create_node:
     push %rdi
     # 分配24字节内存

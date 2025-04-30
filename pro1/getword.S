@@ -1,6 +1,6 @@
 .section .data
     filename:   .asciz "input.txt"      # 文件名，以0结尾
-    txt_buffer:     .space 1024             # 数据缓冲区，1024字节
+    txt_buffer:     .space 10240             # 数据缓冲区，10240字节
     bufsize =   . - txt_buffer              # 缓冲区大小
     
     # 错误信息
@@ -19,7 +19,7 @@
 .section .bss
     .global output_buffer
     word_buffer: .space 20
-    output_buffer:  .space 1024          # 输出缓冲区，1024字节
+    output_buffer:  .space 10240          # 输出缓冲区，10240字节
 
 .section .text
 
@@ -42,21 +42,11 @@ loop:
     je end
 
     call write
-    # as_put
-    # leaq word_buffer(%rip), %rsi  # address
-    # movq %rdx, %rdx               # length
-    # call as_puts
-    # call print_enter
-    
     jmp loop
     
     ret
 
 end:
-#     leaq output_buffer(%rip), %rsi  # address
-#     movq $50, %rdx               # length
-#     call as_puts
-#     call as_exit
     
 
 # Use: %rax, %rbx
@@ -106,10 +96,16 @@ L5:
 
     movb (%rsi), %al
     movb %al, (%rdx)
+    call isaccept
+    cmpq $1, %rax
+    je L8
+
+    movb (%rsi), %al
+    movb %al, (%rdx)
     call isalpha
     cmpq $-1, %rax
     je L6
-    
+L8:
     incq %rdx
     jmp L5
 
@@ -146,6 +142,25 @@ is_alpha:
     ret
 
 not_alpha:
+    movq $-1, %rax           # Return -1 (false)
+    ret
+
+# Input: %rax
+.globl isaccept
+    .type isaccept, @function
+isaccept:
+    cmpb $''', %al           # Check if character == '''
+    je is_accept
+    cmpb $'-', %al           # Check if character == '-'
+    je is_accept
+
+    jmp not_accept
+
+is_accept:
+    movq $1, %rax            # Return 1 (true)
+    ret
+
+not_accept:
     movq $-1, %rax           # Return -1 (false)
     ret
 

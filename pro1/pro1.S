@@ -39,7 +39,6 @@ add_loop:
     jmp add_loop
 
 add_end:
-    
     call print_node
     call maxword
     call find_max
