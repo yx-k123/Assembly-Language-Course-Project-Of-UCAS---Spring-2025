@@ -1,0 +1,13 @@
+*
+
+!.gitignore
+!*.c
+!*.h
+!*.S
+!*.s
+!*.cpp
+!*.hpp
+!*.py
+!*.txt
+!*.tex
+!*.cu
