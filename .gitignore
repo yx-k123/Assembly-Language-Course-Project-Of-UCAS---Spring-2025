@@ -1,15 +1,11 @@
-# 忽略所有文件
 *
 
-# 排除特定文件类型
-!.gitignore
-!*.c
-!*.h
-!*.S
-!*.s
-!*.cpp
-!*.hpp
-!*.py
-!*.txt
-!*.tex
-!*.cu
+!*.*
+!*/
+
+*.zip
+*.o
+*.tar
+*.png
+*.jpg
+*.json
